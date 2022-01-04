@@ -1,3 +1,3 @@
 # shop-app-backend
 
-Kleiner Express Server der Daten aus AirTable fetcht und sie aufbereitet lokal bereit stellt.
+Small express server that fetches data from AirTable to provide it refined locally via REST api.
