@@ -1,7 +1,7 @@
 {
   "name": "shop-app-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Small express server that fetches data from AirTable to provide it refined locally via REST api.",
   "main": "index.js",
   "scripts": {
     "app": "gulp run --gulpfile build/main.ts --dev --watch",
@@ -16,7 +16,7 @@
     "type": "git",
     "url": "git+https://github.com/rtXerox/shop-app-backend.git"
   },
-  "author": "",
+  "author": "rtXerox",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/rtXerox/shop-app-backend/issues"
