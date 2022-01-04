@@ -31,7 +31,7 @@ export class Products implements ShopRoute
 			{
 				const params = {
 					view   : "sort by created",
-					fields : [ "id", "title", "thumbnail", "rating", "price", "name (from tags)" ]
+					fields : [ "id", "title", "rating", "price", "name (from tags)", "image" ]
 				}
 
 				const records = await this._base( "products" )
@@ -43,7 +43,7 @@ export class Products implements ShopRoute
 					json.products.push( {
 						id        : record.fields[ "id" ],
 						title     : record.fields[ "title" ],
-						thumbnail : record.fields[ "thumbnail" ],
+						thumbnail : record.fields[ "image" ][0]["thumbnails"]["large"]["url"],
 						rating    : record.fields[ "rating" ],
 						price     : record.fields[ "price" ],
 						tags      : record.fields[ "name (from tags)" ]

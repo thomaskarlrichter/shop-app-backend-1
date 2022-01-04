@@ -23,10 +23,11 @@
   },
   "homepage": "https://github.com/rtXerox/shop-app-backend#readme",
   "dependencies": {
+    "airtable": "^0.11.1",
+    "cors": "^2.8.5",
     "express": "^4.17.2",
     "open": "^8.0.7",
-    "reflect-metadata": "^0.1.13",
-    "airtable": "^0.11.1"
+    "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
     "systemjs": "^6.8.3",

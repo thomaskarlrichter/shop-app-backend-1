@@ -1,5 +1,6 @@
 import Airtable, { Base }                                         from "airtable";
 import express, { Express }                                       from "express"
+import cors                                                       from "cors"
 import { Server }                                                 from "http"
 import { ShopRoute, ShopRouteConstructor }                        from "./app.d";
 import { Products }                                               from "./routes/products";
@@ -21,6 +22,8 @@ class App
 	constructor( private _port: number )
 	{
 		Airtable.configure( AIRTABLE_CONFIG );
+		this._express.use( cors() );
+		this._express.options( '*', cors() );
 
 		this._base = Airtable.base( BASE_ID );
 
