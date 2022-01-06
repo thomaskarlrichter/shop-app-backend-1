@@ -1,14 +1,14 @@
-import { Controller, Get, Params, Response } from "@decorators/express";
-import { Response as ExpressResponse }       from "express";
+import { Controller, Get, Params, Post, Response } from "@decorators/express";
+import { Response as ExpressResponse }             from "express";
 
 import { base }                           from "../app";
 import { RequestedResourceNotFoundError } from "../errors/requested-resource-not-found-error";
 
-@Controller( "/products/" )
-export class ProductsController
+@Controller( "/product/" )
+export class ProductController
 {
-	@Get( "/overview" )
-	public async overview( @Response() response: ExpressResponse )
+	@Get( "/all" )
+	public async all( @Response() response: ExpressResponse )
 	{
 		const json = { products : [] };
 
@@ -42,8 +42,8 @@ export class ProductsController
 		return response.send( json );
 	}
 
-	@Get( "/:productId" )
-	public async singleById( @Response() response: ExpressResponse, @Params( 'productId' ) id: string )
+	@Get( "/single/:productId" )
+	public async single( @Response() response: ExpressResponse, @Params( 'productId' ) id: string )
 	{
 		let json;
 
