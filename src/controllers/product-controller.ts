@@ -34,9 +34,7 @@ export class ProductController
 		}
 		catch( error )
 		{
-			response.status( error.statusCode );
-
-			return response.send( error.message );
+			return response.status( error.statusCode ).send( error.message );
 		}
 
 		return response.send( json );
@@ -74,9 +72,7 @@ export class ProductController
 
 		catch( error )
 		{
-			response.status( error.statusCode );
-
-			return response.send( error.message );
+			return response.status( error.statusCode ).send( error.message );
 		}
 
 		return response.send( json );
