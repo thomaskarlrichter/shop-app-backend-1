@@ -4,7 +4,6 @@ interface ArgumentsTypeMap
 {
 	"--dev": boolean;
 	"--watch": boolean;
-	"--port": number;
 
 	[ key: string ]: any;
 }
@@ -15,18 +14,12 @@ type ArgumentsMap = {
 
 const ARGUMENTS_MAP: ArgumentsMap = {
 	"--dev"   : ( argument: string ) => process.argv.indexOf( argument ) !== -1,
-	"--watch" : ( argument: string ) => process.argv.indexOf( argument ) !== -1,
-	"--port"  : ( argument: string ) =>
-	{
-		const index = process.argv.indexOf( argument );
-
-		return index !== -1 ? parseInt( process.argv[ index + 1 ] ) : false;
-	},
+	"--watch" : ( argument: string ) => process.argv.indexOf( argument ) !== -1
 };
 
-export const SOURCE_DIRECTORY  = "../src/**/*.ts";
-export const OUTPUT_DIRECTORY  = "../dist/";
-export const OUTPUT_ENTRY_FILE = "app.js";
+export const SOURCE_DIRECTORY       = "./src/**/*.ts";
+export const OUTPUT_DIRECTORY       = "./dist/";
+export const OUTPUT_ENTRY_FILE_NAME = "app.js";
 
 export const ENVIRONMENTS = {
 	dev  : "dev",

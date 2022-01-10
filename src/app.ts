@@ -1,13 +1,18 @@
-import { attachControllers }                                      from "@decorators/express";
-import Airtable                                                   from "airtable";
-import cors                                                       from "cors";
-import express                                                    from "express";
-import { ProductController }                                      from "./controllers/product-controller";
-import { UserController }                                         from "./controllers/user-controller";
-import { API_KEY, BASE_ID, BASE_URL, DEFAULT_PORT, ENDPOINT_URL } from "./settings";
+import { attachControllers }      from "@decorators/express";
+import Airtable                   from "airtable";
+import cors                       from "cors";
+import { config as dotenvConfig } from "dotenv";
+import express                    from "express";
+import { ProductController }      from "./controllers/product-controller";
+import { UserController }         from "./controllers/user-controller";
+import { DEFAULT_PORT }           from "./settings";
 
-const PORT = parseInt( process.env.PORT ) || DEFAULT_PORT;
-const app  = express();
+dotenvConfig();
+
+const { AIRTABLE_API_KEY, PORT, AIRTABLE_ENDPOINT_URL, SERVER_BASE_URL, AIRTABLE_BASE_ID } = process.env;
+
+const port                                                                 = parseInt( PORT ) || DEFAULT_PORT;
+const app                                                                  = express();
 
 app.use( express.json() );
 app.use( cors() );
@@ -19,12 +24,12 @@ attachControllers( app, [
 ] );
 
 Airtable.configure( {
-	apiKey      : API_KEY,
-	endpointUrl : ENDPOINT_URL,
+	apiKey      : AIRTABLE_API_KEY,
+	endpointUrl : AIRTABLE_ENDPOINT_URL,
 } );
 
-export const base = Airtable.base( BASE_ID );
+export const base = Airtable.base( AIRTABLE_BASE_ID );
 
-app.listen( PORT, () => console.log( `Server available at ${BASE_URL}:${PORT}` ) );
+app.listen( port, () => console.log( `Server available at ${SERVER_BASE_URL}:${port}` ) );
 
 /* TODO: cart should be saved on server rather than on client session */

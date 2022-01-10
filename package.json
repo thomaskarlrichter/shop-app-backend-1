@@ -4,13 +4,13 @@
   "description": "Small express server that fetches data from AirTable to provide it refined locally via REST api.",
   "main": "index.js",
   "scripts": {
-    "app": "gulp run --gulpfile build/main.ts --dev --watch",
-    "app:prod": "gulp run --gulpfile build/main.ts",
-    "build": "gulp build --gulpfile build/main.ts --dev",
-    "build-watch": "gulp build --gulpfile build/main.ts --dev --watch",
-    "build:prod": "gulp build --gulpfile build/main.ts",
-    "clean": "gulp clean --gulpfile build/main.ts",
-    "start-server": "gulp start-server --gulpfile build/main.ts"
+    "app": "gulp run --gulpfile build-gulp.ts --dev --watch",
+    "app:prod": "gulp run --gulpfile build-gulp.ts",
+    "build": "gulp build --gulpfile build-gulp.ts --dev",
+    "build-watch": "gulp build --gulpfile build-gulp.ts --dev --watch",
+    "build:prod": "gulp build --gulpfile build-gulp.ts",
+    "clean": "gulp clean --gulpfile build-gulp.ts",
+    "start-server": "gulp start-server --gulpfile build-gulp.ts"
   },
   "repository": {
     "type": "git",
@@ -28,8 +28,10 @@
     "airtable": "^0.11.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
     "express": "^4.17.2",
     "jsonwebtoken": "^8.5.1",
+    "nodemailer": "^6.7.2",
     "open": "^8.0.7",
     "reflect-metadata": "^0.1.13"
   },

@@ -1,4 +1,4 @@
-import { getArgument, getEnv, OUTPUT_DIRECTORY, OUTPUT_ENTRY_FILE } from "./settings";
+import { getArgument, getEnv, OUTPUT_DIRECTORY, OUTPUT_ENTRY_FILE_NAME } from "./settings";
 
 const nodemon = require( "gulp-nodemon" );
 
@@ -7,7 +7,7 @@ export function start( done: Function )
 	const watch = getArgument( "--watch" );
 
 	const options = {
-		script : `${OUTPUT_DIRECTORY}${OUTPUT_ENTRY_FILE}`,
+		script : `${OUTPUT_DIRECTORY}${OUTPUT_ENTRY_FILE_NAME}`,
 		ext    : "js html",
 		env    : { "NODE_ENV" : getEnv() },
 		done   : done,
