@@ -1,14 +1,14 @@
-import { Body, Controller, Post, Query, Response } from "@decorators/express";
-import { compare, hash }                           from "bcryptjs";
-import { Response as ExpressResponse }             from "express";
-import { sign, verify }                            from "jsonwebtoken";
-import { base }                                    from "../app";
-import { BadInputError }                           from "../errors/bad-input-error";
-import { ConflictError }                           from "../errors/conflict-error";
-import { ForbiddenError }                          from "../errors/forbidden-error";
-import { send }                                    from "../mail";
-import { AuthenticateToken, TokenData }            from "../middleware/access";
-import { SALT_ROUNDS_COUNT }                       from "../settings";
+import { Body, Controller, Params, Post, Response } from "@decorators/express";
+import { compare, hash }                            from "bcryptjs";
+import { Response as ExpressResponse }              from "express";
+import { sign }                                     from "jsonwebtoken";
+import { base }                                     from "../app";
+import { BadInputError }                            from "../errors/bad-input-error";
+import { ConflictError }                            from "../errors/conflict-error";
+import { ForbiddenError }                           from "../errors/forbidden-error";
+import { send }                                     from "../mail";
+import { AuthenticateToken }                        from "../middleware/access";
+import { SALT_ROUNDS_COUNT }                        from "../settings";
 
 const { JWT_EXPIRATION, JWT_SECRET_KEY, CLIENT_BASE_URL } = process.env;
 
@@ -147,17 +147,13 @@ export class UserController
 		return response.status( 201 ).send( "User successfully created." );
 	}
 
-	@Post( "/verify" )
-	public async verify( @Query( "token" ) token: string, @Response() response: ExpressResponse )
+	@Post( "/verify", [ AuthenticateToken ] )
+	public async verify( @Response() response: ExpressResponse )
 	{
+		const { email } = ( response as any )?.user;
+
 		try
 		{
-			if( !token ) throw new ForbiddenError( `Input parameters incorrect.` );
-
-			const { email } = verify( token, JWT_SECRET_KEY ) as TokenData;
-
-			if( !email ) throw new ForbiddenError( `Input parameters incorrect.` );
-
 			const [ user ] = await base( "users" )
 				.select( {
 					view            : "default",
@@ -167,7 +163,7 @@ export class UserController
 				} )
 				.all();
 
-			if( !user ) throw new ForbiddenError( `Input parameters incorrect.` );
+			if( !user ) throw new ForbiddenError( `User not found.` );
 
 			if( user.fields[ "verified" ] ) throw new ConflictError( `User already verified.` );
 
@@ -183,13 +179,11 @@ export class UserController
 		return response.status( 201 ).send( "User verifivation successfull." );
 	}
 
-	@Post( "/retry-verification" )
-	public async retryVerification( @Body() { email }: RetryVerificationRequestBody, @Response() response: ExpressResponse )
+	@Post( "/retry-verification/:email" )
+	public async retryVerification( @Params( "email" ) email: string, @Response() response: ExpressResponse )
 	{
 		try
 		{
-			if( !email ) throw new ForbiddenError( `Input parameters incorrect.` );
-
 			const [ user ] = await base( "users" )
 				.select( {
 					view            : "default",
@@ -207,7 +201,7 @@ export class UserController
 
 			if( user.fields[ "verified" ] ) throw new ConflictError( `User already verified.` );
 
-			await this._handleNewVerificationRequest( email as string );
+			await this._handleNewVerificationRequest( email );
 		}
 		catch( error )
 		{

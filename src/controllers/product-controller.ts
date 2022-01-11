@@ -1,8 +1,13 @@
-import { Controller, Get, Params, Post, Response } from "@decorators/express";
-import { Response as ExpressResponse }             from "express";
+import { Body, Controller, Get, Params, Post, Response } from "@decorators/express";
+import { Response as ExpressResponse }                   from "express";
 
 import { base }                           from "../app";
 import { RequestedResourceNotFoundError } from "../errors/requested-resource-not-found-error";
+
+interface CheckoutRequestBody
+{
+	items: string[];
+}
 
 @Controller( "/product/" )
 export class ProductController
@@ -76,5 +81,18 @@ export class ProductController
 		}
 
 		return response.send( json );
+	}
+
+	@Post( "/checkout" )
+	async checkout( @Body() { items = [] }: CheckoutRequestBody, @Response() response: ExpressResponse )
+	{
+		try
+		{
+			// do something with items
+		}
+		catch( error )
+		{
+			return response.status( error.statusCode ).send( error.message );
+		}
 	}
 }
