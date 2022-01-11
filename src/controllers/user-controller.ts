@@ -1,17 +1,14 @@
-import { Controller, Post, Request, Response }                    from "@decorators/express";
-import { compare, hash }                                          from "bcryptjs";
-import { config as dotenvConfig }                                 from "dotenv";
-import { Request as ExpressRequest, Response as ExpressResponse } from "express";
-import { decode, sign, verify }                                   from "jsonwebtoken";
-import { base }                                                   from "../app";
-import { BadInputError }                                          from "../errors/bad-input-error";
-import { ConflictError }                                          from "../errors/conflict-error";
-import { ForbiddenError }                                         from "../errors/forbidden-error";
-import { GoneError }                                              from "../errors/gone-error";
-import { SALT_ROUNDS_COUNT }                                      from "../settings";
-import { send }                                                   from "../mail";
-
-dotenvConfig();
+import { Body, Controller, Post, Query, Response } from "@decorators/express";
+import { compare, hash }                           from "bcryptjs";
+import { Response as ExpressResponse }             from "express";
+import { sign, verify }                            from "jsonwebtoken";
+import { base }                                    from "../app";
+import { BadInputError }                           from "../errors/bad-input-error";
+import { ConflictError }                           from "../errors/conflict-error";
+import { ForbiddenError }                          from "../errors/forbidden-error";
+import { send }                                    from "../mail";
+import { AuthenticateToken, TokenData }            from "../middleware/access";
+import { SALT_ROUNDS_COUNT }                       from "../settings";
 
 const { JWT_EXPIRATION, JWT_SECRET_KEY, CLIENT_BASE_URL } = process.env;
 
@@ -27,20 +24,37 @@ interface LoginExpressResponse
 	}
 }
 
+interface RegisterRequestBody
+{
+	firstname: string;
+	lastname: string;
+	email: string;
+	password: string;
+}
+
+interface LoginRequestBody
+{
+	email: string;
+	password: string;
+}
+
+interface RetryVerificationRequestBody
+{
+	email: string;
+}
+
 @Controller( "/user/" )
 export class UserController
 {
-	@Post( "/login" )
-	public async login( @Request() request: ExpressRequest, @Response() response: ExpressResponse )
+	@Post( "/login", [ AuthenticateToken ] )
+	public async login( @Body() { email, password }: LoginRequestBody, @Response() response: ExpressResponse )
 	{
-		const { email : inputEmail, password } = request?.body
-		const json: LoginExpressResponse       = {};
+		const json: LoginExpressResponse = {};
+		const tokenUser                  = ( response as any ).user;
 
 		try
 		{
-			/* TODO: accept token in header instead of credentials */
-
-			if( !inputEmail || !password ) throw new BadInputError( "Malformed body - Email and/or password missing." );
+			if( !tokenUser && ( !email || !password ) ) throw new BadInputError( "Missing input." );
 
 			const [ user ] = await base( "users" )
 				.select( {
@@ -54,16 +68,19 @@ export class UserController
 						"hash",
 						"abbreviation (from language)"
 					],
-					filterByFormula : `{email} = '${inputEmail}'`,
+					filterByFormula : `{email} = '${tokenUser?.email || email}'`,
 					maxRecords      : 1
 				} )
 				.all();
 
-			if( !user ) throw new ForbiddenError( `User email or password incorrect.` );
+			if( !tokenUser )
+			{
+				if( !user ) throw new ForbiddenError( `User email or password incorrect.` );
 
-			const valid = await compare( password, user.fields[ "hash" ] as string );
+				const valid = await compare( password, user.fields[ "hash" ] as string );
 
-			if( !valid ) throw new ForbiddenError( `User email or password incorrect.` );
+				if( !valid ) throw new ForbiddenError( `User email or password incorrect.` );
+			}
 
 			if( !user.fields[ "verified" ] ) throw new ForbiddenError( `User email not verified.` );
 
@@ -90,35 +107,23 @@ export class UserController
 	}
 
 	@Post( "/register" )
-	public async register( @Request() request: ExpressRequest, @Response() response: ExpressResponse )
+	public async register( @Body() { firstname, lastname, email, password }: RegisterRequestBody, @Response() response: ExpressResponse )
 	{
-		const { firstname, lastname, email, password } = request?.body
-
 		try
 		{
 			if( !firstname || !lastname || !email || !password ) throw new BadInputError( "Malformed body - Missing data in request body." );
 
-			const [ user ] = await base( "users" )
+			const hasUser = ( await base( "users" )
 				.select( {
 					view            : "default",
-					fields          : [
-						"id",
-						"firstname",
-						"lastname",
-						"email",
-						"verified",
-						"hash",
-						"abbreviation (from language)"
-					],
 					filterByFormula : `{email} = '${email}'`,
 					maxRecords      : 1
 				} )
-				.all();
+				.all() as any[] ).length;
 
-			if( user ) throw new ConflictError( "Email already in use." );
+			if( hasUser ) throw new ConflictError( "Email already in use." );
 
 			const hashedPassword = await hash( password, SALT_ROUNDS_COUNT );
-			const jwt            = await this._handleNewVerificationRequest( email );
 
 			await base( "users" )
 				.create( [
@@ -127,46 +132,42 @@ export class UserController
 							firstname,
 							lastname,
 							email,
-							hash : hashedPassword,
-							jwt
+							hash : hashedPassword
 						}
 					}
 				] );
+
+			await this._handleNewVerificationRequest( email );
 		}
 		catch( error )
 		{
-			return response.status( error.statusCode ).send( error.message );
+			return response.status( error.message === "jwt expired" ? 410 : error.statusCode ).send( error.message );
 		}
 
 		return response.status( 201 ).send( "User successfully created." );
 	}
 
 	@Post( "/verify" )
-	public async verify( @Request() request: ExpressRequest, @Response() response: ExpressResponse )
+	public async verify( @Query( "token" ) token: string, @Response() response: ExpressResponse )
 	{
-		const { token } = request.query;
-
 		try
 		{
-			const email = this._tryGettingEmailFromJwt( token );
+			if( !token ) throw new ForbiddenError( `Input parameters incorrect.` );
+
+			const { email } = verify( token, JWT_SECRET_KEY ) as TokenData;
 
 			if( !email ) throw new ForbiddenError( `Input parameters incorrect.` );
 
 			const [ user ] = await base( "users" )
 				.select( {
 					view            : "default",
-					fields          : [
-						"id",
-						"email",
-						"jwt",
-						"verified"
-					],
+					fields          : [ "verified" ],
 					filterByFormula : `{email} = '${email}'`,
 					maxRecords      : 1
 				} )
 				.all();
 
-			if( !user || token !== user.fields[ "jwt" ] ) throw new ForbiddenError( `Input parameters incorrect.` );
+			if( !user ) throw new ForbiddenError( `Input parameters incorrect.` );
 
 			if( user.fields[ "verified" ] ) throw new ConflictError( `User already verified.` );
 
@@ -174,17 +175,17 @@ export class UserController
 		}
 		catch( error )
 		{
-			return response.status( error.statusCode || 500 ).send( error.message );
+			const status = error.message === "invalid token" ? 403 : ( error.statusCode || 500 );
+
+			return response.status( status ).send( error.message );
 		}
 
 		return response.status( 201 ).send( "User verifivation successfull." );
 	}
 
 	@Post( "/retry-verification" )
-	public async retryVerification( @Request() request: ExpressRequest, @Response() response: ExpressResponse )
+	public async retryVerification( @Body() { email }: RetryVerificationRequestBody, @Response() response: ExpressResponse )
 	{
-		const { email } = request?.body;
-
 		try
 		{
 			if( !email ) throw new ForbiddenError( `Input parameters incorrect.` );
@@ -202,55 +203,31 @@ export class UserController
 				} )
 				.all();
 
-			debugger;
-
 			if( !user ) throw new ForbiddenError( `Input parameters incorrect.` );
 
 			if( user.fields[ "verified" ] ) throw new ConflictError( `User already verified.` );
 
-			await this._handleNewVerificationRequest( email as string, user.id );
+			await this._handleNewVerificationRequest( email as string );
 		}
 		catch( error )
 		{
 			return response.status( error.statusCode || 500 ).send( error.message );
 		}
 
-		return response.status( 201 ).send( "User verifivation successfull." );
+		return response.status( 201 ).send( "New user verifivation successfully requested." );
 	}
 
-	private _tryGettingEmailFromJwt( token ): string
-	{
-		let email;
-
-		try
-		{
-			email = decode( token as string, { json : true } ).email;
-
-			verify( token as string, JWT_SECRET_KEY );
-		}
-		catch( error )
-		{
-			if( error.message === "jwt expired" ) throw new GoneError( "Token expired" );
-			else throw new ForbiddenError( `Input parameters incorrect.` );
-		}
-
-		return email;
-	}
-
-	/**
-	 * @param userId (optional): If provided the user record will be updated, so it contains the new JWT
-	 */
-	private async _handleNewVerificationRequest( email: string, userId?: string )
+	private async _handleNewVerificationRequest( email: string )
 	{
 		const jwt = this._generateJwt( email );
 
 		const link = `${CLIENT_BASE_URL}/verify?token=${jwt}`;
 
+		console.log( "TOKEN: ", `[${jwt}]` );
+
 		await send();
 
 		/* TODO: generate new email */
-
-		if( userId ) await base( "users" ).update( userId, { jwt } );
 
 		return jwt;
 	}

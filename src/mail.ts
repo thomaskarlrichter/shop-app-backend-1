@@ -38,8 +38,6 @@ export async function send()
 		html    : "<a href='https://google.com'>Bestätigungslink</a>", // html body
 	} );
 
-	debugger
-
 	console.log( info );
 }
 
