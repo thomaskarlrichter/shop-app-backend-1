@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Params, Post, Response } from "@decorators/express";
-import { Response as ExpressResponse }                   from "express";
+import { Body, Controller, Get, Params, Post, Query, Response } from "@decorators/express";
+import { Response as ExpressResponse }                          from "express";
 
 import { base }                           from "../app";
 import { RequestedResourceNotFoundError } from "../errors/requested-resource-not-found-error";
@@ -46,32 +46,42 @@ export class ProductController
 	}
 
 	@Get( "/single/:productId" )
-	public async single( @Response() response: ExpressResponse, @Params( 'productId' ) id: string )
+	public async single( @Params( 'productId' ) id: string, @Query( "type" ) type: "detail" | "tile" = "detail", @Response() response: ExpressResponse )
 	{
 		let json;
+		const selectFields = [ "id", "title", "rating", "price", "name (from tags)", "image" ];
+
+		if( type === "detail" )
+		{
+			selectFields.push( "description" );
+			selectFields.push( "shipment" );
+		}
 
 		try
 		{
-			const records = await base( "products" )
+			const { fields } = ( await base( "products" )
 				.select( {
-					view            : "default",
-					fields          : [ "id", "title", "rating", "price", "name (from tags)", "image" ],
-					filterByFormula : `{id} = '${id}'`,
-					maxRecords      : 1
-				} )
-				.all();
+						view            : "default",
+						fields          : selectFields,
+						filterByFormula : `{id} = '${id}'`,
+						maxRecords      : 1
+					}
+				)
+				.all() )?.[ 0 ];
 
-			if( !records.length ) throw new RequestedResourceNotFoundError( `Product with id '${id}' not found.` );
+			if( !fields ) throw new RequestedResourceNotFoundError( `Product with id '${id}' not found.` );
 
-			const [ product ] = records;
+			const imageSize = type === "detail" ? "large" : "full";
 
 			json = {
-				id     : product.fields[ "id" ],
-				title  : product.fields[ "title" ],
-				image  : product.fields[ "image" ][ 0 ][ "thumbnails" ][ "full" ][ "url" ],
-				rating : product.fields[ "rating" ],
-				price  : product.fields[ "price" ],
-				tags   : product.fields[ "name (from tags)" ]
+				id          : fields[ "id" ],
+				title       : fields[ "title" ],
+				image       : fields[ "image" ][ 0 ][ "thumbnails" ][ imageSize ][ "url" ],
+				rating      : fields[ "rating" ],
+				price       : fields[ "price" ],
+				description : fields[ "description" ],
+				shipment    : fields[ "shipment" ],
+				tags        : fields[ "name (from tags)" ]
 			};
 		}
 

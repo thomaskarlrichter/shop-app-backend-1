@@ -2,7 +2,7 @@ import { Middleware, Request, Response }                                        
 import { NextFunction, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { verify }                                                               from "jsonwebtoken";
 
-const { JWT_EXPIRATION, JWT_SECRET_KEY, CLIENT_BASE_URL } = process.env;
+const { JWT_SECRET_KEY } = process.env;
 
 export interface TokenData
 {
