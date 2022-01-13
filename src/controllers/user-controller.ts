@@ -89,18 +89,16 @@ export class UserController
 				firstname : user.fields[ "firstname" ] as string,
 				lastname  : user.fields[ "lastname" ] as string,
 				email     : user.fields[ "email" ] as string,
-				language  : user.fields[ "abbreviation (from language)" ][ 0 ] as string,
+				language  : user.fields[ "abbreviation (from language)" ]?.[ 0 ] as string,
 			};
 
 			const jwt = this._generateJwt( json.user.email );
 
 			json.jwt = jwt;
-
-			await base( "users" ).update( user.id, { jwt } );
 		}
 		catch( error )
 		{
-			return response.status( error.statusCode ).send( error.message );
+			return response.status( error.statusCode || 403 ).send( error.message );
 		}
 
 		return response.status( 201 ).send( json );
@@ -229,7 +227,7 @@ export class UserController
 	private _generateJwt( email: string )
 	{
 		return sign(
-			{ email : email },
+			{ email },
 			JWT_SECRET_KEY,
 			{
 				expiresIn : JWT_EXPIRATION
