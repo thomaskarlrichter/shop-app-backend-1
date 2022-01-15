@@ -1,12 +1,13 @@
 require( "dotenv" ).config()
 
-import { attachControllers } from "@decorators/express";
-import Airtable              from "airtable";
-import cors                  from "cors";
-import express               from "express";
-import { ProductController } from "./controllers/product-controller";
-import { UserController }    from "./controllers/user-controller";
-import { DEFAULT_PORT }      from "./settings";
+import { attachControllers }        from "@decorators/express";
+import Airtable                     from "airtable";
+import cors                         from "cors";
+import express                      from "express";
+import { AuthenticationController } from "./controllers/authentication-controller";
+import { ProductController }        from "./controllers/product-controller";
+import { UserController }           from "./controllers/user-controller";
+import { DEFAULT_PORT }             from "./settings";
 
 const { AIRTABLE_API_KEY, PORT, AIRTABLE_ENDPOINT_URL, SERVER_BASE_URL, AIRTABLE_BASE_ID } = process.env;
 
@@ -18,6 +19,7 @@ app.use( cors() );
 app.options( '*', cors() );
 
 attachControllers( app, [
+	AuthenticationController,
 	ProductController,
 	UserController
 ] );
