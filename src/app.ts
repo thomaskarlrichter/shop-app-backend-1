@@ -32,5 +32,3 @@ Airtable.configure( {
 export const base = Airtable.base( AIRTABLE_BASE_ID );
 
 app.listen( port, () => console.log( `Server available at ${SERVER_BASE_URL}:${port}` ) );
-
-/* TODO: cart should be saved on server rather than on client session */

@@ -93,6 +93,47 @@ export class ProductController
 		return response.send( json );
 	}
 
+	@Get( "/reviews/:productId" )
+	public async reviews( @Params( 'productId' ) id: string, @Response() response: ExpressResponse )
+	{
+		let json           = { reviews : [] };
+		const selectFields = [ "id", "title (from product)", "text", "created", "email (from user)", "firstname (from user)", "lastname (from user)" ];
+
+		try
+		{
+			const records = await base( "product-reviews" )
+				.select( {
+						view            : "default",
+						fields          : selectFields,
+						filterByFormula : `{product} = '${id}'`
+					}
+				)
+				.all();
+
+			for( const record of records )
+			{
+				const { fields }            = record;
+				const { id, text, created } = fields;
+
+				json.reviews.push( {
+					id,
+					text,
+					created,
+					productTitle : fields[ "title (from product)" ][ 0 ],
+					userName     : `${fields[ "firstname (from user)" ][ 0 ]} ${fields[ "lastname (from user)" ][ 0 ]}`,
+					userEmail    : fields[ "email (from user)" ][ 0 ]
+				} );
+			}
+		}
+
+		catch( error )
+		{
+			return response.status( error.statusCode ).send( error.message );
+		}
+
+		return response.send( json );
+	}
+
 	@Post( "/checkout" )
 	async checkout( @Body() { items = [] }: CheckoutRequestBody, @Response() response: ExpressResponse )
 	{

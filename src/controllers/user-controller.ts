@@ -7,7 +7,7 @@ import { ConflictError }                   from "../errors/conflict-error";
 import { handleNewVerificationRequest }    from "../middleware/authentication";
 import { SALT_ROUNDS_COUNT }               from "../settings";
 
-const { JWT_EXPIRATION, JWT_SECRET_KEY, CLIENT_BASE_URL } = process.env;
+const { CLIENT_BASE_URL } = process.env;
 
 interface LoginExpressResponse
 {
