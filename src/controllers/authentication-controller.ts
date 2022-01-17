@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Params, Post, Put, Response }                                                                                                from "@decorators/express";
+import { Body, Controller, Delete, Get, Params, Patch, Post, Put, Response }                                                                                         from "@decorators/express";
 import { compare, hash }                                                                                                                                             from "bcryptjs";
 import { Response as ExpressResponse }                                                                                                                               from "express";
 import { base }                                                                                                                                                      from "../app";
@@ -163,7 +163,7 @@ export class AuthenticationController
 		return response.status( 200 ).send( json );
 	}
 
-	@Post( "/verify", [ AuthenticateVerficationToken ] )
+	@Patch( "/verify", [ AuthenticateVerficationToken ] )
 	public async verify( @Response() response: ExpressResponse )
 	{
 		const { email } = ( response as any )?.user;
